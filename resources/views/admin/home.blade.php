@@ -15,6 +15,7 @@
                     @endif
                     {{ __('You are logged in!') }}
                      <a href="{{route('admin.posts.index')}}">Tutti i post</a>
+                     <a href="{{route('admin.categories.index')}}">Tutte le categories</a>
                     <i class="fa-solid fa-house"></i>
                 </div>
             </div>
