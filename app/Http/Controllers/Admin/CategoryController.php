@@ -6,9 +6,22 @@ namespace App\Http\Controllers\Admin;
 use App\Category;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
+use Illuminate\Support\Str;
+use Doctrine\DBAL\Tools\Dumper;
+use Facade\Ignition\DumpRecorder\Dump;
+use Psy\VarDumper\Dumper as VarDumperDumper;
+use Symfony\Component\Console\Helper\Dumper as HelperDumper;
 
 class CategoryController extends Controller
 {
+
+      protected $validationRule = [
+        'name'=>'required|string|max:100',
+      
+        
+    ];
+
+    
     /**
      * Display a listing of the resource.
      *
@@ -18,7 +31,6 @@ class CategoryController extends Controller
     {
         $categories= Category::all();
       
-        dump($categories);
         return view('admin.categories.index', compact('categories'));
     }
 
@@ -29,7 +41,8 @@ class CategoryController extends Controller
      */
     public function create()
     {
-        //
+        $categories = Category::all();
+        return view('admin.categories.create', compact('categories'));
     }
 
     /**
@@ -40,7 +53,19 @@ class CategoryController extends Controller
      */
     public function store(Request $request)
     {
-        //
+      $request->validate($this->validationRule);
+     $data = $request->all();
+     $newCategory = new Category();
+     $newCategory->name = $data['name'];
+     $slug = Str::of($data['name'])->slug('-');
+     $count = 1;
+     while(Category::where('slug', $slug)->first()){
+        $slug = Str::of($data['name'])->slug('-')."-{$count}";
+        $count++;
+     }
+     $newCategory->slug = $slug;
+     $newCategory->save();
+     return redirect()->route('admin.categories.show', $newCategory->id);
     }
 
     /**
@@ -83,8 +108,22 @@ class CategoryController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function destroy($id)
+    public function destroy(Category $category)
     {
-        //
+        
+        $category->delete();
+        return redirect()->route('admin.categories.index')->with("message","category with id: {$category->id} successfully deleted !");
+    }
+
+
+    
+    private function getSlug($title){
+        $slug = Str::of($title)->slug('-');
+        $count = 1;
+        while( Post::where('slug', $slug)->first() ){
+            $slug = Str::of($title)->slug('-') . "-{$count}";
+            $count++;
+        }
+        return $slug;
     }
 }
