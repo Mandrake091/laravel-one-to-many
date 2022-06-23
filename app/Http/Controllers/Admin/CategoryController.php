@@ -87,7 +87,8 @@ class CategoryController extends Controller
      */
     public function edit($id)
     {
-        //
+        $category = Category::findOrFail($id);
+        return view('admin.categories.edit', compact('category'));
     }
 
     /**
@@ -97,9 +98,22 @@ class CategoryController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function update(Request $request, $id)
+    public function update(Request $request, Category $category)
     {
-        //
+        $request->validate($this->validationRule);
+        $data = $request->all();
+        
+        if($category->name != $data['name']){
+            $category->name = $data['name'];
+            $slug = Str::of($category->name)->slug('-');
+            if($slug != $category->slug){
+                $category->slug = $this->getSlug($category->name);
+            }
+        }
+        
+        $category->update();
+        
+        return redirect()->route('admin.categories.index', $category->id);
     }
 
     /**
@@ -112,16 +126,16 @@ class CategoryController extends Controller
     {
         
         $category->delete();
-        return redirect()->route('admin.categories.index')->with("message","category with id: {$category->id} successfully deleted !");
+        return redirect()->route('admin.categories.index');
     }
 
 
     
-    private function getSlug($title){
-        $slug = Str::of($title)->slug('-');
+    private function getSlug($name){
+        $slug = Str::of($name)->slug('-');
         $count = 1;
-        while( Post::where('slug', $slug)->first() ){
-            $slug = Str::of($title)->slug('-') . "-{$count}";
+        while( Category::where('slug', $slug)->first() ){
+            $slug = Str::of($name)->slug('-') . "-{$count}";
             $count++;
         }
         return $slug;
